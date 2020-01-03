@@ -1,7 +1,33 @@
-const { userSchema } = require("../modals/modal");
 const { userPostSchema } = require("../modals/modal");
+const { userSchema } = require("../modals/modal");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, "./uploads/");
+  },
+  filename: function(req, file, cb) {
+    cb(null, new Date().toISOString() + file.originalname);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+    cb(null, true);
+  } else {
+    cb(newError("upload only jpeg/png"), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 1024 * 1024 * 5
+  },
+  fileFilter: fileFilter
+});
 
 const generateToken = (userID, userEmail) => {
   const token = jwt.sign(
@@ -14,11 +40,17 @@ const generateToken = (userID, userEmail) => {
 
 resolvers = {
   getUsersList: () => {
-    return userSchema.find()
+    return userSchema
+      .find()
       .then(result => {
-        console.log("userslist:",result);
+        console.log("userslist:", result);
         return result.map(data => {
-          return { ...data._doc, _id: data.id, password: null,DateCreated : (data.dateRegistered.toString()) };
+          return {
+            ...data._doc,
+            _id: data.id,
+            password: null,
+            DateCreated: data.dateRegistered.toString()
+          };
         });
       })
       .catch(err => {
@@ -32,22 +64,20 @@ resolvers = {
     return userPostSchema
       .find({ UserId: args.userId })
       .then(result => {
-        console.log("posts are:",result);
+        console.log("posts are:", result);
         console.log("---- userposts list has completed:-----");
-        return result.map(data =>{
-          return {...data._doc,_id : data.id}
-        })
+        return result.map(data => {
+          return { ...data._doc, _id: data.id };
+        });
       })
       .catch(err => {
         console.log(err);
       });
-      
   },
 
   ValidateUser: async args => {
-
     console.log("---- Validating in db-----");
-    console.log("-------",args.input.emailId);
+    console.log("-------", args.input.emailId);
     const user = await userSchema.findOne({ emailId: args.input.emailId });
     if (!user) {
       throw new Error("User does not exist!");
@@ -57,13 +87,12 @@ resolvers = {
     if (!isEqual) {
       throw new Error("Password is incorrect!");
     }
-   
+
     console.log("---- Validating in db has completed:-----");
     return generateToken(user.id, user.emailId);
-    
   },
 
-  RegisterUser: args => {
+  RegisterUser: async args => {
     return userSchema
       .findOne({ emailId: args.input.emailId })
       .then(user => {
@@ -95,7 +124,8 @@ resolvers = {
       });
   },
 
-  UploadUserPosts: args => {
+  UploadUserPosts: async args => {
+    upload.single("uploadPics");
     return userSchema
       .findById(args.input.userId)
       .then(emailResponse => {
@@ -114,9 +144,9 @@ resolvers = {
           const userData = new userPostSchema({
             UserId: args.input.userId,
             Textdata: args.input.Textdata,
-            ImageUrl: args.input.ImageUrl,
+            ImageUrl: args.input.filename,
             Width: args.input.Width,
-            Height :args.input.Height,
+            Height: args.input.Height,
             PostCreatedOn: args.input.PostCreatedOn
           });
           return userData.save();

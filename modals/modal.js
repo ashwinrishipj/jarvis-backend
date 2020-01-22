@@ -24,7 +24,7 @@ const userCredentials = new mongoDb.Schema({
   }
 })
 
-const userSchema = mongoDb.model("graphqls",userCredentials);
+const userSchema = mongoDb.model("userCredential",userCredentials);
 
 const PostSchema = new mongoDb.Schema({
   UserId :{

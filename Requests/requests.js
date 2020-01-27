@@ -15,6 +15,19 @@ const schema = buildSchema(`
     PostCreatedOn : String!,
     Likes :Int
   }
+  type AuthenticationDetails {
+      token : String!,
+      tokenExpiration : Int!
+  }
+  input RegisteringUser{
+    emailId : String!,
+    password : String!,
+    phoneNumber : Int!
+  }
+  input UserCredentials {
+    emailId : String!,
+    password : String!
+  }
   input UserPosts{
     userId : String!,
     Textdata : String!,
@@ -23,20 +36,6 @@ const schema = buildSchema(`
     Width : Int,
     Height : Int,
     Likes :Int
-  }
-  type AuthenticationDetails {
-      token : String!,
-      tokenExpiration : Int!
-  }
-  input RegisteringUser{
-    firstName : String!,
-    lastName : String!
-    emailId : String!,
-    password : String!,
-  }
-  input UserCredentials {
-    emailId : String!,
-    password : String!
   }
   type RootQuery {
     getUsersList :[getUsersList!],

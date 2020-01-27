@@ -17,7 +17,7 @@ mongoose
   )
   .then(() => {
     app.listen(4000);
-    console.log("data base connected:");
+    console.log("Connected to cloud:");
   })
   .catch(err => {
     console.log(err);

@@ -2,7 +2,7 @@ const { userPostSchema } = require("../modals/modal");
 const { userSchema } = require("../modals/modal");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const multer = require('multer');
+const multer = require("multer");
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -104,8 +104,7 @@ resolvers = {
       .then(hashedPassword => {
         let date = new Date();
         const user = new userSchema({
-          firstName: args.input.firstName,
-          lastName: args.input.lastName,
+          phoneNumber: args.input.phoneNumber,
           emailId: args.input.emailId,
           password: hashedPassword,
           dateRegistered: date
@@ -114,7 +113,7 @@ resolvers = {
       })
       .then(result => {
         if (result !== null) {
-          console.log("${args.input.emailId} created", result.id);
+          console.log(`${args.input.emailId}` + "created", result.id);
           return generateToken(result.id, result.emailId);
         }
         throw new Error("insertion in Db failed:");

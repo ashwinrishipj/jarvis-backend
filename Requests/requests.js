@@ -22,7 +22,7 @@ const schema = buildSchema(`
   input RegisteringUser{
     emailId : String!,
     password : String!,
-    phoneNumber : Int!
+    phoneNumber : String!
   }
   input UserCredentials {
     emailId : String!,

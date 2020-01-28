@@ -80,7 +80,7 @@ resolvers = {
     console.log("-------", args.input.emailId);
     const user = await userSchema.findOne({ emailId: args.input.emailId });
     if (!user) {
-      throw new Error("User does not exist!");
+      throw new Error("User Not found! please Register!");
     }
     console.log("resultant:", user);
     const isEqual = await bcrypt.compare(args.input.password, user.password);
@@ -97,7 +97,7 @@ resolvers = {
       .findOne({ emailId: args.input.emailId })
       .then(user => {
         if (user != null) {
-          throw new Error("user already exists");
+          throw new Error("user already exists!. please Login.");
         }
         return bcrypt.hash(args.input.password, 12);
       })

@@ -12,14 +12,14 @@ app.use(bodyParser.json());
 
 mongoose
   .connect(
-    `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@rishi-cluster-shard-00-00-3l7u9.mongodb.net:27017,rishi-cluster-shard-00-01-3l7u9.mongodb.net:27017,rishi-cluster-shard-00-02-3l7u9.mongodb.net:27017/${process.env.MONGO_DB}?ssl=true&replicaSet=rishi-cluster-shard-0&authSource=admin&retryWrites=true&w=majority`,
-    { useNewUrlParser: true, useUnifiedTopology: true }
+    `mongodb://rishi:Dumbledore@cluster0-shard-00-00-3l7u9.mongodb.net:27017,cluster0-shard-00-01-3l7u9.mongodb.net:27017,cluster0-shard-00-02-3l7u9.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin&retryWrites=true&w=majority`,
+    { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false }
   )
   .then(() => {
     app.listen(4000);
-    console.log("Connected to cloud:");
+    console.log("Server is live:");
   })
-  .catch(err => {
+  .catch((err) => {
     console.log(err);
   });
 
@@ -28,6 +28,6 @@ app.use(
   express_graphql({
     schema: schema,
     rootValue: resolvers,
-    graphiql: true
+    graphiql: true,
   })
 );

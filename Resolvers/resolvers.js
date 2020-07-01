@@ -1,16 +1,21 @@
-const { userPostSchema } = require("../modals/modal");
-const { userSchema } = require("../modals/modal");
+const {
+  userPostSchema,
+  userImageUrls,
+  userSchema,
+} = require("../modals/modal");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
+const { Pixabay, Unsplash } = require("./ImageUrls");
+const { isValidObjectId } = require("mongoose");
 
 const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function (req, file, cb) {
     cb(null, "./uploads/");
   },
-  filename: function(req, file, cb) {
+  filename: function (req, file, cb) {
     cb(null, new Date().toISOString() + file.originalname);
-  }
+  },
 });
 
 const fileFilter = (req, file, cb) => {
@@ -24,9 +29,9 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 1024 * 5
+    fileSize: 1024 * 1024 * 5,
   },
-  fileFilter: fileFilter
+  fileFilter: fileFilter,
 });
 
 const generateToken = (userID, userEmail) => {
@@ -38,46 +43,60 @@ const generateToken = (userID, userEmail) => {
   return { token: token, tokenExpiration: 1 };
 };
 
+const retrieveAllPost = (id) => {
+  return userPostSchema
+    .find({ _id: id })
+    .then((result) => {
+      console.log("posts are:", result);
+      return result.map((data) => {
+        return { ...data._doc, _id: data.id };
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
+
 resolvers = {
   getUsersList: () => {
     return userSchema
       .find()
-      .then(result => {
+      .then((result) => {
         console.log("userslist:", result);
-        return result.map(data => {
+        return result.map((data) => {
           return {
             ...data._doc,
             _id: data.id,
             password: null,
-            DateCreated: data.dateRegistered.toString()
+            DateCreated: data.dateRegistered.toString(),
           };
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         throw err;
       });
   },
 
-  getUserPosts: async args => {
+  getUserPosts: async (args) => {
     console.log("---- getting userposts from db:-----");
+
     return userPostSchema
       .find({ UserId: args.userId })
-      .then(result => {
+      .then((result) => {
         console.log("posts are:", result);
-        console.log("---- userposts list has completed:-----");
-        return result.map(data => {
+        return result.map((data) => {
           return { ...data._doc, _id: data.id };
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
       });
   },
 
-  ValidateUser: async args => {
+  ValidateUser: async (args) => {
     console.log("---- Validating in db-----");
-    console.log("-------", args.input.emailId);
+    console.log("user-emailId:", args.input.emailId);
     const user = await userSchema.findOne({ emailId: args.input.emailId });
     if (!user) {
       throw new Error("User Not found! please Register!");
@@ -92,51 +111,50 @@ resolvers = {
     return generateToken(user.id, user.emailId);
   },
 
-  RegisterUser: async args => {
+  RegisterUser: (args) => {
     return userSchema
       .findOne({ emailId: args.input.emailId })
-      .then(user => {
+      .then((user) => {
         if (user != null) {
           throw new Error("user already exists!. please Login.");
         }
         return bcrypt.hash(args.input.password, 12);
       })
-      .then(hashedPassword => {
+      .then((hashedPassword) => {
         let date = new Date();
         const user = new userSchema({
-          phoneNumber: args.input.phoneNumber,
           emailId: args.input.emailId,
           password: hashedPassword,
-          dateRegistered: date
+          dateRegistered: date,
         });
         return user.save();
       })
-      .then(result => {
+      .then((result) => {
         if (result !== null) {
           console.log(`${args.input.emailId}` + "created", result.id);
           return generateToken(result.id, result.emailId);
         }
         throw new Error("insertion in Db failed:");
       })
-      .catch(err => {
+      .catch((err) => {
         throw err;
       });
   },
 
-  UploadUserPosts: async args => {
-    upload.single("uploadPics");
+  UploadUserPosts: (args) => {
+    // upload.single("uploadPics");
     return userSchema
       .findById(args.input.userId)
-      .then(emailResponse => {
+      .then((emailResponse) => {
         if (emailResponse == null) {
           throw new Error("-----invalid user-----");
         }
         return userPostSchema.findOne({
           UserId: args.input.userId,
-          PostCreatedOn: args.input.PostCreatedOn
+          PostCreatedOn: args.input.PostCreatedOn,
         });
       })
-      .then(existingPost => {
+      .then((existingPost) => {
         if (existingPost !== null) {
           throw new Error("-----Reset your password:-----");
         } else {
@@ -146,20 +164,81 @@ resolvers = {
             ImageUrl: args.input.filename,
             Width: args.input.Width,
             Height: args.input.Height,
-            PostCreatedOn: args.input.PostCreatedOn
+            PostCreatedOn: args.input.PostCreatedOn,
           });
           return userData.save();
         }
       })
-      .then(userPostsResponse => {
+      .then((userPostsResponse) => {
         console.log("chain working:");
         if (userPostsResponse !== null) return 1;
         return 0;
       })
-      .catch(err => {
+      .catch((err) => {
         throw err;
       });
-  }
+  },
+
+  getImageUrls: async (args) => {
+    console.log("/n ---- Fetching Image urls:-----");
+    console.log("user-Id:", args.input.userId);
+
+    try {
+      var pixabayResponse = await Pixabay(args.input.keyword);
+      if (pixabayResponse) {
+        var unsplashResponse = await Unsplash(args.input.keyword);
+        if (unsplashResponse) {
+          const userData = new userImageUrls({
+            userId: args.input.userId,
+            keywordSearched: args.input.keyword,
+            date: new Date(),
+            fetchedUrls: {
+              pixabay: { pixabayResponse },
+              unsplash: { unsplashResponse },
+            },
+          });
+          return userData.save();
+        } else {
+          throw Error("unsplash error ended");
+        }
+      } else {
+        throw Error("pixabay error ended");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  },
+
+  deletePost: async (args) => {
+    console.log("/n ---- Deleting post: -----");
+    console.log("user-Id:", args.input.userId);
+
+    const user = await userPostSchema.findByIdAndDelete(args.input.postId);
+
+    if (!user) {
+      throw new Error("User Not found! please Register!");
+    }
+
+    return retrieveAllPost(args.input.userId);
+  },
+
+  addComments: async (args) => {
+    console.log("/n ------ adding comments post: ------");
+    console.log("/n postId :", args.input.postId);
+
+    const filter = { _id: args.input.postId };
+    const update = { Likes: 10 };
+
+    const post = await userPostSchema.findByIdAndUpdate(
+      args.input.postId,
+      update
+    );
+
+    if (!post) {
+      throw new Error("data not found");
+    }
+    return retrieveAllPost(args.input.postId);
+  },
 };
 
 module.exports = { resolvers };

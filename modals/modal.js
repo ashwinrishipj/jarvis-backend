@@ -1,56 +1,87 @@
-const mongoDb = require('mongoose');
+const mongoDb = require("mongoose");
+
+var Schema = mongoDb.Schema,
+  ObjectId = Schema.ObjectId;
 
 const userCredentials = new mongoDb.Schema({
-  emailId:{
-    type:String,
-    required:true,
-    unique:true
-  },
-  password:{
-    type:String,
-    required:true
-  },
-  phoneNumber:{
-    type: Number,
-    required:true,
-    unique:true
-  },
-  dateRegistered:{
-    type:Date,
-    required:true
-  }
-})
-
-const userSchema = mongoDb.model("userCredential",userCredentials);
-
-const PostSchema = new mongoDb.Schema({
-  UserId :{
+  emailId: {
     type: String,
-    required:true
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  dateRegistered: {
+    type: Date,
+    required: true,
+  },
+});
+
+const userSchema = mongoDb.model("userCredential", userCredentials);
+
+const userPosts = new mongoDb.Schema({
+  UserId: {
+    type: String,
+    required: true,
   },
   Textdata: {
     type: String,
-    required: true
+    required: true,
   },
-  PostCreatedOn :{
+  comments: [
+    {
+      text: String,
+      userId: String,
+      postedDate: Date,
+      likes: Number,
+    },
+  ],
+  PostCreatedOn: {
     type: String,
-    required : true
+    required: true,
   },
-  ImageUrl:{
-    type : String,
+  ImageUrl: {
+    type: String,
   },
-  Width:{
-    type: Number
+  Width: {
+    type: Number,
   },
-  Height:{
-    type :Number
+  Height: {
+    type: Number,
   },
   Likes: {
     type: Number,
-    Default: 0
-  }
+    Default: 0,
+  },
 });
 
-const userPostSchema = mongoDb.model("userposts", PostSchema);
+const userPostSchema = mongoDb.model("userPosts", userPosts);
 
-module.exports = {userPostSchema,userSchema };
+const imageUrls = mongoDb.Schema({
+  userId: {
+    type: String,
+    required: true,
+  },
+  keywordSearched: {
+    type: String,
+    required: true,
+  },
+  date: {
+    type: Date,
+    required: true,
+  },
+  fetchedUrls: {
+    Pixabay: {
+      type: Object,
+    },
+    unsplash: {
+      type: Object,
+    },
+  },
+});
+
+const userImageUrls = mongoDb.model("imageUrls", imageUrls);
+
+module.exports = { userPostSchema, userSchema, userImageUrls };

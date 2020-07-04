@@ -45,7 +45,7 @@ const generateToken = (userID, userEmail) => {
 
 const retrieveAllPost = (id) => {
   return userPostSchema
-    .find({ _id: id })
+    .find({ UserId: id })
     .then((result) => {
       console.log("posts are:", result);
       return result.map((data) => {
